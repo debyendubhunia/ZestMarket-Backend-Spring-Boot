@@ -1,0 +1,193 @@
+version: '3.8'
+
+networks:
+  zestmarket-net:
+    driver: bridge
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: zestmarket-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: zestmarket_db
+    ports:
+      - "3306:3306"
+    networks:
+      - zestmarket-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: zestmarket-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - zestmarket-net
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zestmarket-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - zestmarket-net
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: zestmarket-kafka
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - zestmarket-net
+
+  config-server:
+    build: ./config-server
+    container_name: zestmarket-config-server
+    ports:
+      - "8888:8888"
+    networks:
+      - zestmarket-net
+
+  eureka-server:
+    build: ./eureka-server
+    container_name: zestmarket-eureka-server
+    ports:
+      - "8761:8761"
+    depends_on:
+      - config-server
+    networks:
+      - zestmarket-net
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: zestmarket-api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - REDIS_HOST=redis
+      - EUREKA_HOST=eureka-server
+    depends_on:
+      - eureka-server
+      - redis
+    networks:
+      - zestmarket-net
+
+  auth-service:
+    build: ./auth-service
+    container_name: zestmarket-auth-service
+    ports:
+      - "8081:8081"
+    environment:
+      - MYSQL_HOST=mysql
+      - EUREKA_HOST=eureka-server
+    depends_on:
+      - mysql
+      - eureka-server
+    networks:
+      - zestmarket-net
+
+  user-service:
+    build: ./user-service
+    container_name: zestmarket-user-service
+    ports:
+      - "8082:8082"
+    environment:
+      - MYSQL_HOST=mysql
+      - EUREKA_HOST=eureka-server
+    depends_on:
+      - mysql
+      - eureka-server
+    networks:
+      - zestmarket-net
+
+  product-service:
+    build: ./product-service
+    container_name: zestmarket-product-service
+    ports:
+      - "8083:8083"
+    environment:
+      - MYSQL_HOST=mysql
+      - REDIS_HOST=redis
+      - EUREKA_HOST=eureka-server
+    depends_on:
+      - mysql
+      - redis
+      - eureka-server
+    networks:
+      - zestmarket-net
+
+  cart-service:
+    build: ./cart-service
+    container_name: zestmarket-cart-service
+    ports:
+      - "8084:8084"
+    environment:
+      - MYSQL_HOST=mysql
+      - REDIS_HOST=redis
+      - EUREKA_HOST=eureka-server
+    depends_on:
+      - mysql
+      - redis
+      - eureka-server
+    networks:
+      - zestmarket-net
+
+  order-service:
+    build: ./order-service
+    container_name: zestmarket-order-service
+    ports:
+      - "8085:8085"
+    environment:
+      - MYSQL_HOST=mysql
+      - KAFKA_HOST=kafka
+      - EUREKA_HOST=eureka-server
+    depends_on:
+      - mysql
+      - kafka
+      - eureka-server
+    networks:
+      - zestmarket-net
+
+  payment-service:
+    build: ./payment-service
+    container_name: zestmarket-payment-service
+    ports:
+      - "8086:8086"
+    environment:
+      - MYSQL_HOST=mysql
+      - KAFKA_HOST=kafka
+      - EUREKA_HOST=eureka-server
+    depends_on:
+      - mysql
+      - kafka
+      - eureka-server
+    networks:
+      - zestmarket-net
+
+  notification-service:
+    build: ./notification-service
+    container_name: zestmarket-notification-service
+    ports:
+      - "8087:8087"
+    environment:
+      - KAFKA_HOST=kafka
+      - EUREKA_HOST=eureka-server
+    depends_on:
+      - kafka
+      - eureka-server
+    networks:
+      - zestmarket-net

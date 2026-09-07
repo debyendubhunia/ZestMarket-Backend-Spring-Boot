@@ -1,0 +1,151 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+  cloud:
+    gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+              - PATCH
+              - HEAD
+            allowedHeaders: "*"
+            allowCredentials: true
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/v1/auth/**
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/v1/users/**
+        - id: product-service
+          uri: lb://product-service
+          predicates:
+            - Path=/api/v1/products/**, /api/v1/categories/**, /api/v1/reviews/**
+        - id: cart-service
+          uri: lb://cart-service
+          predicates:
+            - Path=/api/v1/cart/**, /api/v1/wishlist/**, /api/v1/coupons/**
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/v1/orders/**, /api/v1/admin/orders/**
+        - id: payment-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/v1/payments/**
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/v1/notifications/**
+
+        # Swagger Docs Routing
+        - id: auth-service-docs
+          uri: lb://auth-service
+          predicates:
+            - Path=/aggregate/auth-service/v3/api-docs
+          filters:
+            - RewritePath=/aggregate/auth-service/v3/api-docs, /v3/api-docs
+            - SetRequestHeader=X-Forwarded-Host, localhost:8080
+            - SetRequestHeader=Host, localhost:8080
+        - id: user-service-docs
+          uri: lb://user-service
+          predicates:
+            - Path=/aggregate/user-service/v3/api-docs
+          filters:
+            - RewritePath=/aggregate/user-service/v3/api-docs, /v3/api-docs
+            - SetRequestHeader=X-Forwarded-Host, localhost:8080
+            - SetRequestHeader=Host, localhost:8080
+        - id: product-service-docs
+          uri: lb://product-service
+          predicates:
+            - Path=/aggregate/product-service/v3/api-docs
+          filters:
+            - RewritePath=/aggregate/product-service/v3/api-docs, /v3/api-docs
+            - SetRequestHeader=X-Forwarded-Host, localhost:8080
+            - SetRequestHeader=Host, localhost:8080
+        - id: cart-service-docs
+          uri: lb://cart-service
+          predicates:
+            - Path=/aggregate/cart-service/v3/api-docs
+          filters:
+            - RewritePath=/aggregate/cart-service/v3/api-docs, /v3/api-docs
+            - SetRequestHeader=X-Forwarded-Host, localhost:8080
+            - SetRequestHeader=Host, localhost:8080
+        - id: order-service-docs
+          uri: lb://order-service
+          predicates:
+            - Path=/aggregate/order-service/v3/api-docs
+          filters:
+            - RewritePath=/aggregate/order-service/v3/api-docs, /v3/api-docs
+            - SetRequestHeader=X-Forwarded-Host, localhost:8080
+            - SetRequestHeader=Host, localhost:8080
+        - id: payment-service-docs
+          uri: lb://payment-service
+          predicates:
+            - Path=/aggregate/payment-service/v3/api-docs
+          filters:
+            - RewritePath=/aggregate/payment-service/v3/api-docs, /v3/api-docs
+            - SetRequestHeader=X-Forwarded-Host, localhost:8080
+            - SetRequestHeader=Host, localhost:8080
+        - id: notification-service-docs
+          uri: lb://notification-service
+          predicates:
+            - Path=/aggregate/notification-service/v3/api-docs
+          filters:
+            - RewritePath=/aggregate/notification-service/v3/api-docs, /v3/api-docs
+            - SetRequestHeader=X-Forwarded-Host, localhost:8080
+            - SetRequestHeader=Host, localhost:8080
+
+springdoc:
+  api-docs:
+    enabled: true
+  servers:
+    - url: http://localhost:8080
+      description: API Gateway
+  swagger-ui:
+    enabled: true
+    path: /zestmarket-api-doc
+    config-url: /v3/api-docs/swagger-config
+    urls:
+      - name: 1. Auth Service
+        url: /aggregate/auth-service/v3/api-docs
+      - name: 2. User Service
+        url: /aggregate/user-service/v3/api-docs
+      - name: 3. Product Service
+        url: /aggregate/product-service/v3/api-docs
+      - name: 4. Cart Service
+        url: /aggregate/cart-service/v3/api-docs
+      - name: 5. Order Service
+        url: /aggregate/order-service/v3/api-docs
+      - name: 6. Payment Service
+        url: /aggregate/payment-service/v3/api-docs
+      - name: 7. Notification Service
+        url: /aggregate/notification-service/v3/api-docs
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://${EUREKA_HOST:localhost}:8761/eureka/
+
+jwt:
+  secret: 9a2f8c4e7b1a5d3f8e0c2b4a6f8d1e3c5b7a9f0e2d4c6b8a1f3e5d7c9b0a2f4e

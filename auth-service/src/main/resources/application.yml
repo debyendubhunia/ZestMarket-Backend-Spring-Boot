@@ -1,0 +1,41 @@
+server:
+  port: 8081
+  forward-headers-strategy: none
+
+
+spring:
+  application:
+    name: auth-service
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:3306/zestmarket_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://${EUREKA_HOST:localhost}:8761/eureka/
+
+jwt:
+  secret: 9a2f8c4e7b1a5d3f8e0c2b4a6f8d1e3c5b7a9f0e2d4c6b8a1f3e5d7c9b0a2f4e
+  access-expiration-ms: 900000 # 15 mins
+  refresh-expiration-ms: 604800000 # 7 days
+
+springdoc:
+  override-with-generic-response-server: false
+  servers:
+    - url: http://localhost:8080
+      description: API Gateway
+    - url: http://localhost:8081
+      description: Direct Auth Service
+
+
